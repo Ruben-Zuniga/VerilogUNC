@@ -1,3 +1,5 @@
+`timescale 1ns/100ps
+
 module mux
 #(  
     parameter   DATA_WIDTH = 32,
