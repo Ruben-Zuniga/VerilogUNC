@@ -1,28 +1,24 @@
-module counter_32b(
-
-    output      [31:0]  o_count,
-    input               i_sw,
-    input               i_comp_reset,
-    input               i_reset,
-    input               clock
-
+module counter_32b
+#(
+    parameter   DATA_WIDTH = 32
+)
+(
+    output reg  [DATA_WIDTH-1:0]  o_count_data,
+    input                         i_sw,
+    input                         i_comp_reset,
+    input                         i_reset,
+    input                         clock
 );
 
-always @(posedge clock) begin
+always @(posedge clock or posedge i_reset or posedge i_comp_reset) begin
 
-    if(!i_reset and !i_comp_reset) begin
+    if(!i_reset && !i_comp_reset) begin
         
-        if(i_sw) begin
+        if(i_sw) o_count_data <= o_count_data + 1;
+        else     o_count_data <= o_count_data;
 
-            o_count = o_count + 1;
-
-        end
-
-    end else begin
-        
-        o_count = 0;
-
-    end
+    end else
+        o_count_data <= 0;
     
 end
 
