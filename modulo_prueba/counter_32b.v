@@ -1,3 +1,5 @@
+`timescale 1ns/100ps
+
 module counter_32b
 #(
     parameter   DATA_WIDTH = 32
@@ -10,7 +12,7 @@ module counter_32b
     input                         clock
 );
 
-always @(posedge clock or posedge i_reset or posedge i_comp_reset) begin
+always @(posedge clock) begin
 
     if(!i_reset && !i_comp_reset) begin
         
