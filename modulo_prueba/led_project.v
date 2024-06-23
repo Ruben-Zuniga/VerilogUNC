@@ -1,3 +1,5 @@
+`timescale 1ns/100ps
+
 module led_project
 #(
     parameter   DATA_WIDTH = 32,
@@ -22,7 +24,7 @@ assign  o_led = led;
 
 always@(*) begin
 
-    if(i_sw) begin
+    if(i_sw[3]) begin
         o_led_b = led;
         o_led_g = 4'b0;
 
@@ -41,6 +43,7 @@ count #(
     .R3(R3)
 )
 u_count(
+    .o_valid(valid),
     .i_sw(i_sw[2:0]),
     .clock(clock),
     .i_reset(i_reset)        
