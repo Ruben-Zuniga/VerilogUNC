@@ -1,3 +1,7 @@
+`include "Modulos/LFSR/lfsr.v"
+// iverilog -o Modulos/LFSR/lfsr_tb Modulos/LFSR/lfsr_tb.v
+// vvp Modulos/LFSR/lfsr_tb
+
 // Clock: 10 MHz -> 100 ns
 `timescale 1ns / 100ps
 
@@ -79,6 +83,9 @@ module LFSR16_1002D_tb;
     end
 
     initial begin
+        $dumpfile("Modulos/LFSR/lfsr_tb.vcd");
+        $dumpvars(0, LFSR16_1002D_tb);
+
         i_rst                                       = 1'b1                                      ;
         i_soft_rst                                  = 1'b0                                      ;
         i_seed                                      = 1'b0                                      ;
@@ -90,15 +97,18 @@ module LFSR16_1002D_tb;
         i_rst                                       = 1'b0                                      ;
 
         #10                                                                                     ;
-        @(o_lfsr == LFSR_SEED)                                                                  ;
+        while (o_lfsr != LFSR_SEED)
+            @(posedge i_valid)                                                                  ;
         Set_soft_reset( {$random(s_soft_reset)} % LFSR_SEED )                                   ;
         
-        #10000                                                                                  ;
-        @(posedge i_valid)                                                                      ;
+        #10                                                                                     ;
+        while (o_lfsr != i_seed)
+            @(posedge i_valid)                                                                  ;
         Set_soft_reset( {$random(s_soft_reset)} % LFSR_SEED )                                   ;
 
-        #10000                                                                                  ;
-        @(posedge i_valid)                                                                      ;
+        #10                                                                                     ;
+        while (o_lfsr != i_seed)
+            @(posedge i_valid)                                                                  ;
         Set_soft_reset( {$random(s_soft_reset)} % LFSR_SEED )                                   ;
 
         #10000                                                                                  ;
