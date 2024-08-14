@@ -89,15 +89,19 @@ module LFSR16_1002D_tb;
         @(posedge i_valid)                                                                      ;
         i_rst                                       = 1'b0                                      ;
 
-        #1000                                                                                   ;
-        @(posedge i_valid)                                                                      ;
-        Set_soft_reset(16'h0000)                                                                ;
+        #10                                                                                     ;
+        @(o_lfsr == LFSR_SEED)                                                                  ;
+        Set_soft_reset( {$random(s_soft_reset)} % LFSR_SEED )                                   ;
         
-        #1000                                                                                   ;
+        #10000                                                                                  ;
         @(posedge i_valid)                                                                      ;
-        Set_hard_reset()                                                                        ;
+        Set_soft_reset( {$random(s_soft_reset)} % LFSR_SEED )                                   ;
 
-        #500                                                                                    ;
+        #10000                                                                                  ;
+        @(posedge i_valid)                                                                      ;
+        Set_soft_reset( {$random(s_soft_reset)} % LFSR_SEED )                                   ;
+
+        #10000                                                                                  ;
         @(posedge i_valid)                                                                      ;
         $finish                                                                                 ;
     end
