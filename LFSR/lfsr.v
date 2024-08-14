@@ -32,11 +32,11 @@ module LFSR16_1002D
             o_lfsr[3]       <= o_lfsr[2] ^ feedback                                             ;
             o_lfsr[4]       <= o_lfsr[3]                                                        ;
             o_lfsr[5]       <= o_lfsr[4] ^ feedback                                             ;
-            o_lfsr[15:6]    <= {o_lfsr[14:5]}                                                   ;
+            o_lfsr[15:6]    <= o_lfsr[14:5]                                                     ;
         end
 
     end
 
-    assign  feedback        = o_lfsr[15] ^ !o_lfsr;
+    assign  feedback        = o_lfsr[15] ^ !o_lfsr                                              ;
 
 endmodule
