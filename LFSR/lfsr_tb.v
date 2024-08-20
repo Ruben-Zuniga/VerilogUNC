@@ -1,7 +1,3 @@
-`include "Modulos/LFSR/lfsr.v"
-// iverilog -o Modulos/LFSR/lfsr_tb Modulos/LFSR/lfsr_tb.v
-// vvp Modulos/LFSR/lfsr_tb
-
 // Clock: 10 MHz -> 100 ns
 `timescale 1ns / 100ps
 
@@ -25,30 +21,29 @@ module LFSR16_1002D_tb;
     integer                         s_soft_reset    = 100                                       ;
     integer                         s_hard_reset    = 200                                       ;
     integer                         s_valid         = 300                                       ;
+    integer                         delay                                                       ;
+
+    `define                         RANDOM_SEEDS    = 1'b1                                      ; 
 
     // Tarea que cambia el valor de i_seed
     task Change_seed
     (
-        input   [LFSR_WIDTH-1:0]    i_new_seed
+        input   [LFSR_WIDTH-1:0]    new_seed
     );
-        i_seed  = i_new_seed                                                                    ;
+        i_seed  = new_seed                                                                      ;
 
     endtask
 
     // Tarea que setea el soft reset
     task Set_soft_reset
     (
-        input   [LFSR_WIDTH-1:0]    i_new_seed 
+        input   [LFSR_WIDTH-1:0]    new_seed 
     ); begin
 
         i_soft_rst                                  = 1'b1                                      ;
-        Change_seed(i_new_seed)                                                                 ;
-
-        while (!($random(s_soft_reset) % 2)) begin
-            #1000                                                                               ;
-        end
-
-        @(posedge i_valid)                                                                      ;
+        Change_seed(new_seed)                                                                   ;
+        #($urandom_range(200,1000))                                                             ;
+        @(posedge clk)                                                                          ;
         i_soft_rst                                  = 1'b0                                      ;
 
     end
@@ -58,12 +53,8 @@ module LFSR16_1002D_tb;
     task Set_hard_reset; begin
 
         i_rst                                       = 1'b1                                      ;
-
-        while (!($random(s_hard_reset) % 2)) begin
-            #1000                                                                               ;
-        end
-
-        @(posedge i_valid)                                                                      ;
+        #($urandom_range(200,1000))                                                             ;
+        @(posedge clk)                                                                          ;
         i_rst                                       = 1'b0                                      ;
 
     end
@@ -74,12 +65,10 @@ module LFSR16_1002D_tb;
 
     // Asignacion de i_valid
     always@(posedge clk) begin
-
-        if($random(s_valid) % 2)
+        if($urandom_range(0,1))
             i_valid                                 <= 1'b1                                     ;
         else
             i_valid                                 <= 1'b0                                     ;
-
     end
 
     initial begin
@@ -93,26 +82,25 @@ module LFSR16_1002D_tb;
         clk                                         = 1'b0                                      ;
 
         #10000                                                                                  ;
-        @(posedge i_valid)                                                                      ;
+        @(posedge clk)                                                                          ;
         i_rst                                       = 1'b0                                      ;
 
-        #10                                                                                     ;
-        while (o_lfsr != LFSR_SEED)
-            @(posedge i_valid)                                                                  ;
-        Set_soft_reset( {$random(s_soft_reset)} % LFSR_SEED )                                   ;
+        repeat(5) begin
+        #1000                                                                                   ;
+        if(RANDOM_SEEDS) begin
+            while (o_lfsr != i_seed)
+                @(posedge clk)                                                                  ;
+            Set_soft_reset($urandom_range(0,LFSR_SEED))                                         ;
+        end
+        else begin
+            while (o_lfsr != LFSR_SEED)
+                @(posedge clk)                                                                  ;
+            Set_soft_reset(LFSR_SEED)                                                           ;
+        end
+        end
         
-        #10                                                                                     ;
-        while (o_lfsr != i_seed)
-            @(posedge i_valid)                                                                  ;
-        Set_soft_reset( {$random(s_soft_reset)} % LFSR_SEED )                                   ;
-
-        #10                                                                                     ;
-        while (o_lfsr != i_seed)
-            @(posedge i_valid)                                                                  ;
-        Set_soft_reset( {$random(s_soft_reset)} % LFSR_SEED )                                   ;
-
         #10000                                                                                  ;
-        @(posedge i_valid)                                                                      ;
+        @(posedge clk)                                                                          ;
         $finish                                                                                 ;
     end
 
@@ -122,6 +110,7 @@ module LFSR16_1002D_tb;
         .LFSR_SEED  (LFSR_SEED)
     ) dut (
         .o_lfsr     (o_lfsr)                                                                    ,
+        .clk        (clk)                                                                       ,
         .i_rst      (i_rst)                                                                     ,
         .i_soft_rst (i_soft_rst)                                                                ,
         .i_seed     (i_seed)                                                                    ,
@@ -129,23 +118,3 @@ module LFSR16_1002D_tb;
     );
 
 endmodule
-
-
-        /*
-         * Para setear cada tiempo random el reset
-
-        while (!i_soft_rst) begin
-            #1000;
-            @(posedge i_valid);
-
-            if($random(s_soft_reset) % 2)
-                i_soft_rst = 1'b1;
-            else
-                i_soft_rst = 1'b0;
-
-        end
-
-        #1000
-        @(posedge i_valid);
-        i_soft_rst = 1'b0;
-        */
