@@ -4,10 +4,11 @@
 
 module LFSR16_1002D
 #(
-    parameter                       LFSR_WIDTH  = 16                                        ,
-    parameter                       LFSR_SEED   = 65535
+    parameter                       LFSR_SEED   = 65535                                     ,
+    parameter                       LFSR_WIDTH  = 16
 )
 (
+    input   wire                    clk                                                     ,
     input   wire                    i_rst                                                   ,
     input   wire                    i_soft_rst                                              ,
     input   wire                    i_valid                                                 ,
@@ -17,15 +18,13 @@ module LFSR16_1002D
 
     wire    feedback;
 
-    always @(posedge i_valid or posedge i_rst) begin
+    always @(posedge clk or posedge i_rst) begin
 
-        if(i_rst) begin
+        if(i_rst)
             o_lfsr          <= LFSR_SEED                                                        ;
-        end
-        else if(i_soft_rst) begin
+        else if(i_soft_rst)
             o_lfsr          <= i_seed                                                           ;
-        end
-        else begin
+        else if(i_valid) begin
             o_lfsr[0]       <= feedback                                                         ;
             o_lfsr[1]       <= o_lfsr[0]                                                        ;
             o_lfsr[2]       <= o_lfsr[1] ^ feedback                                             ;
@@ -34,6 +33,8 @@ module LFSR16_1002D
             o_lfsr[5]       <= o_lfsr[4] ^ feedback                                             ;
             o_lfsr[15:6]    <= o_lfsr[14:5]                                                     ;
         end
+        else
+            o_lfsr          <= o_lfsr                                                           ;
 
     end
 
