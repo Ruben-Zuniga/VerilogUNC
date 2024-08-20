@@ -98,16 +98,19 @@ module LFSR16_1002D_checker
 
     always @(posedge clk or posedge i_rst) begin
 
-        valid_cnt                   <= valid_cnt_next                                           ;
-        invalid_cnt                 <= invalid_cnt_next                                         ;
-        lock                        <= lock_next                                                ;
 
         if(i_rst) begin
             o_lfsr_checker          <= LFSR_SEED                                                ;
+            valid_cnt               <= 3'd0                                                     ;
+            invalid_cnt             <= 2'd0                                                     ;
+            lock                    <= 1'd0                                                     ;
             state                   <= UNLOCKED                                                 ;
         end
         else if(i_soft_rst) begin
             o_lfsr_checker          <= i_seed                                                   ;
+            valid_cnt               <= 3'd0                                                     ;
+            invalid_cnt             <= 2'd0                                                     ;
+            lock                    <= 1'd0                                                     ;
             state                   <= UNLOCKED                                                 ;
         end
         else if(i_valid) begin
@@ -118,12 +121,18 @@ module LFSR16_1002D_checker
             o_lfsr_checker[4]       <= o_lfsr_checker[3]                                        ;
             o_lfsr_checker[5]       <= o_lfsr_checker[4] ^ feedback                             ;
             o_lfsr_checker[15:6]    <= o_lfsr_checker[14:5]                                     ;
-
+            
+            valid_cnt               <= valid_cnt_next                                           ;
+            invalid_cnt             <= invalid_cnt_next                                         ;
+            lock                    <= lock_next                                                ;
             state                   <= state_next                                               ;
         end
         else
             o_lfsr_checker          <= o_lfsr_checker                                           ;
-            state                   <= UNLOCKED                                                 ;
+            valid_cnt               <= valid_cnt_next                                           ;
+            invalid_cnt             <= invalid_cnt_next                                         ;
+            lock                    <= lock_next                                                ;
+            state                   <= state_next                                               ;
 
     end
 
