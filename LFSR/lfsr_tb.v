@@ -90,11 +90,12 @@ module LFSR16_1002D_tb;
         always@(*) i_lfsr = o_lfsr[LFSR_WIDTH-1];
 
     `elsif TEST_2
-        always begin
-            if(!i_rst) begin
-                i_lfsr = o_lfsr[LFSR_WIDTH-1];
-                #
-                
+        always@(posedge clk) begin
+            if(!i_rst && i_valid) begin
+                repeat(4) begin
+                    i_lfsr = o_lfsr[LFSR_WIDTH-1];
+                end
+                i_lfsr = !o_lfsr[LFSR_WIDTH-1];
             end
         end
     `endif
