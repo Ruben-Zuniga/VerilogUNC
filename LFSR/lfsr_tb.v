@@ -16,6 +16,11 @@ module LFSR16_1002D_tb;
     reg                             i_valid                                                     ;
     reg         [LFSR_WIDTH-1:0]    i_seed                                                      ;
     wire        [LFSR_WIDTH-1:0]    o_lfsr                                                      ;
+    wire        [LFSR_WIDTH-1:0]    o_lfsr_checker                                              ;
+    wire                            o_lock                                                      ;
+
+    wire        [1:0]               invalid_cnt                                                 ;
+    wire        [2:0]               valid_cnt                                                   ;
 
     // Seeds $random
     integer                         s_soft_reset    = 100                                       ;
@@ -23,7 +28,8 @@ module LFSR16_1002D_tb;
     integer                         s_valid         = 300                                       ;
     integer                         delay                                                       ;
 
-    `define                         RANDOM_SEEDS    = 1'b1                                      ; 
+    `define                         PERIODICITY                                                 ;
+    `define                         RANDOM_SEEDS                                                ;
 
     // Tarea que cambia el valor de i_seed
     task Change_seed
@@ -63,6 +69,10 @@ module LFSR16_1002D_tb;
     // Clock de 10 MHz
     always #50 clk = ~clk                                                                       ;
 
+    // Contadores
+    assign valid_cnt    = lfsr_checker.valid_cnt                                                ;
+    assign invalid_cnt  = lfsr_checker.invalid_cnt                                              ;
+
     // Asignacion de i_valid
     always@(posedge clk) begin
         if($urandom_range(0,1))
@@ -77,7 +87,7 @@ module LFSR16_1002D_tb;
 
         i_rst                                       = 1'b1                                      ;
         i_soft_rst                                  = 1'b0                                      ;
-        i_seed                                      = 1'b0                                      ;
+        i_seed                                      = LFSR_SEED                                 ;
         i_valid                                     = 1'b0                                      ;
         clk                                         = 1'b0                                      ;
 
@@ -85,36 +95,44 @@ module LFSR16_1002D_tb;
         @(posedge clk)                                                                          ;
         i_rst                                       = 1'b0                                      ;
 
-        repeat(5) begin
-        #1000                                                                                   ;
-        if(RANDOM_SEEDS) begin
-            while (o_lfsr != i_seed)
-                @(posedge clk)                                                                  ;
-            Set_soft_reset($urandom_range(0,LFSR_SEED))                                         ;
-        end
-        else begin
-            while (o_lfsr != LFSR_SEED)
-                @(posedge clk)                                                                  ;
-            Set_soft_reset(LFSR_SEED)                                                           ;
-        end
-        end
-        
+        `ifdef PERIODICITY
+            `include "tb_periodicity.v"
+        `else
+             //`include "tb_checker.v"
+
+        `endif
+                
         #10000                                                                                  ;
         @(posedge clk)                                                                          ;
         $finish                                                                                 ;
     end
 
-    // Instanciacion del diseño
+    // Instanciacion del generador
     LFSR16_1002D #(
-        .LFSR_WIDTH (LFSR_WIDTH)                                                                ,
-        .LFSR_SEED  (LFSR_SEED)
-    ) dut (
-        .o_lfsr     (o_lfsr)                                                                    ,
-        .clk        (clk)                                                                       ,
-        .i_rst      (i_rst)                                                                     ,
-        .i_soft_rst (i_soft_rst)                                                                ,
-        .i_seed     (i_seed)                                                                    ,
-        .i_valid    (i_valid)
+        .LFSR_WIDTH     (LFSR_WIDTH)                                                            ,
+        .LFSR_SEED      (LFSR_SEED)
+    ) lfsr (
+        .o_lfsr         (o_lfsr)                                                                ,
+        .clk            (clk)                                                                   ,
+        .i_rst          (i_rst)                                                                 ,
+        .i_soft_rst     (i_soft_rst)                                                            ,
+        .i_seed         (i_seed)                                                                ,
+        .i_valid        (i_valid)
+    );
+
+    // Instanciacion del chequeador
+    LFSR16_1002D_checker #(
+        .LFSR_WIDTH     (LFSR_WIDTH)                                                            ,
+        .LFSR_SEED      (LFSR_SEED)
+    ) lfsr_checker (
+        .o_lfsr_checker (o_lfsr_checker)                                                        ,
+        .o_lock         (o_lock)                                                                ,
+        .clk            (clk)                                                                   ,
+        .i_rst          (i_rst)                                                                 ,
+        .i_soft_rst     (i_soft_rst)                                                            ,
+        .i_seed         (i_seed)                                                                ,
+        .i_valid        (i_valid)                                                               ,
+        .i_lfsr         (o_lfsr[LFSR_WIDTH-1])
     );
 
 endmodule
