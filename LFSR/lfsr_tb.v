@@ -1,4 +1,7 @@
 // Clock: 10 MHz -> 100 ns
+
+`include "lfsr.v"
+`include "lfsr_checker.v"
 `timescale 1ns / 100ps
 
 module LFSR16_1002D_tb;
@@ -12,6 +15,7 @@ module LFSR16_1002D_tb;
 
     // Puertos
     reg         [2:0]               n_test                                                      ;
+    reg                             test_flag                                                   ;
     reg                             i_rst                                                       ;
     reg                             i_soft_rst                                                  ;
     reg                             i_valid                                                     ;
@@ -32,7 +36,7 @@ module LFSR16_1002D_tb;
     // FIXED_SEEDS o RANDOM_SEEDS
     `define                         RANDOM_SEEDS;
     // TEST_1, TEST_2, TEST_3 o TEST_4
-    `define                         TEST_1;
+    `define                         TEST_2;
 
     // Tarea que cambia el valor de i_seed
     task Change_seed
@@ -80,7 +84,49 @@ module LFSR16_1002D_tb;
     `ifdef PERIODICITY
         `include "lfsr_tb_periodicity.v"
     `elsif CHECKER
-        `include "lfsr_tb_checker.v"
+        //`include "lfsr_tb_checker.v"
+
+        // Condiciones frontera del o_lock
+        `ifdef TEST_1
+            always@(*) i_lfsr = o_lfsr[LFSR_WIDTH-1];
+        `endif
+        
+
+        initial begin
+            $dumpfile("lfsr_tb.vcd");
+            $dumpvars(0, LFSR16_1002D_tb);
+
+            i_rst                                       = 1'b1                                      ;
+            i_soft_rst                                  = 1'b0                                      ;
+            i_seed                                      = LFSR_SEED                                 ;
+            i_valid                                     = 1'b1                                      ;
+            clk                                         = 1'b0                                      ;
+            i_lfsr                                      = 1'b1                                      ;
+
+            #10000                                                                                  ;
+            @(posedge clk)                                                                          ;
+            i_rst                                       = 1'b0                                      ;
+
+            `ifdef TEST_2
+                repeat(10) begin
+                    i_lfsr = o_lfsr[LFSR_WIDTH-1];
+                    test_flag = 1'b1;
+                    #400;
+                    @(posedge clk);
+                    i_lfsr = !o_lfsr[LFSR_WIDTH-1];
+                    test_flag = 1'b0;
+                    #100;
+                    @(posedge clk);
+                end
+            `endif
+            
+            //$display("\n-----o_lock test monitor-----")                                         ;
+            //$display("\nTEST 1: all valid")                                                     ;
+            //$monitor("time: %0t\to_lock: %0b", $time, o_lock)                                   ;
+            $finish                                                                                 ;
+        end
+
+
     `endif
 
     // Instanciacion del generador
