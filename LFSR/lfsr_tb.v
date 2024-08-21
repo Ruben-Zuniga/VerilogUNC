@@ -1,4 +1,7 @@
 // Clock: 10 MHz -> 100 ns
+
+`include "lfsr.v"
+`include "lfsr_checker.v"
 `timescale 1ns / 100ps
 
 module LFSR16_1002D_tb;
@@ -17,6 +20,7 @@ module LFSR16_1002D_tb;
     reg                             i_valid                                                     ;
     reg         [LFSR_WIDTH-1:0]    i_seed                                                      ;
     reg                             i_lfsr                                                      ;
+    reg                             test_flag                                                   ;
     wire        [LFSR_WIDTH-1:0]    o_lfsr                                                      ;
     wire        [LFSR_WIDTH-1:0]    o_lfsr_checker                                              ;
     wire                            o_lock                                                      ;
@@ -32,7 +36,7 @@ module LFSR16_1002D_tb;
     // FIXED_SEEDS o RANDOM_SEEDS
     `define                         RANDOM_SEEDS;
     // TEST_1, TEST_2, TEST_3 o TEST_4
-    `define                         TEST_1;
+    `define                         TEST_2;
 
     // Tarea que cambia el valor de i_seed
     task Change_seed
@@ -78,55 +82,87 @@ module LFSR16_1002D_tb;
     assign invalid_cnt  = lfsr_checker.invalid_cnt                                              ;
 
     // Asignacion de i_valid
-    always@(posedge clk) begin
-        if($urandom_range(0,1))
-            i_valid <= 1'b1                                                                     ;
-        else
-            i_valid <= 1'b0                                                                     ;
-    end
-
-    // Condiciones frontera del o_lock
-    `ifdef TEST_1
-        always@(*) i_lfsr = o_lfsr[LFSR_WIDTH-1];
-
-    `elsif TEST_2
+    `ifdef PERIODICITY
         always@(posedge clk) begin
-            if(!i_rst && i_valid) begin
-                repeat(4) begin
-                    i_lfsr = o_lfsr[LFSR_WIDTH-1];
-                end
-                i_lfsr = !o_lfsr[LFSR_WIDTH-1];
-            end
+            if($urandom_range(0,1))
+                i_valid <= 1'b1                                                                     ;
+            else
+                i_valid <= 1'b0                                                                     ;
         end
     `endif
-    
+
+    `ifdef CHECKER
+        `ifdef TEST_1
+            always@(*) i_lfsr = o_lfsr[LFSR_WIDTH-1];
+        `endif
+    `endif    
 
     initial begin
-        $dumpfile("Modulos/LFSR/lfsr_tb.vcd");
+        $dumpfile("lfsr_tb.vcd");
         $dumpvars(0, LFSR16_1002D_tb);
 
+        test_flag = 1'b0;
         i_rst                                       = 1'b1                                      ;
         i_soft_rst                                  = 1'b0                                      ;
         i_seed                                      = LFSR_SEED                                 ;
-        i_valid                                     = 1'b0                                      ;
         clk                                         = 1'b0                                      ;
         i_lfsr                                      = 1'b0                                      ;
+        `ifdef PERIODICITY
+            i_valid                                     = 1'b0                                      ;
+        `elsif CHECKER
+            i_valid                                     = 1'b1                                      ;
+        `endif
 
         #10000                                                                                  ;
         @(posedge clk)                                                                          ;
         i_rst                                       = 1'b0                                      ;
         
-        `ifdef PERIODICITY
-            `include "tb_periodicity.v"
-        `elsif CHECKER
-            $display("\n-----o_lock test monitor-----")                                         ;
-            
-            $display("\nTEST 1: all valid")                                                     ;
-            $monitor("time: %0t\to_lock: %0b", $time, o_lock)                                   ;
+        repeat(4) begin
 
-            `include "tb_periodicity.v"
+            `ifdef RANDOM_SEEDS
+                while (o_lfsr != i_seed) begin
+
+                    `ifdef CHECKER
+                        `ifdef TEST_2
+                            repeat(4) begin
+                                i_lfsr = o_lfsr[LFSR_WIDTH-1];
+                                test_flag = 1'b1;
+                                #100;
+                                @(posedge clk);
+                            end
+                            i_lfsr = !o_lfsr[LFSR_WIDTH-1];
+                            test_flag = 1'b0;
+                        `endif
+                    `endif
+
+                    #100;
+                    @(posedge clk)                                                                  ;
+                end
+                Set_soft_reset($urandom_range(0,LFSR_SEED))                                         ;
             
-        `endif
+            `elsif FIXED_SEED
+                while (o_lfsr != LFSR_SEED) begin
+
+                    `ifdef CHECKER
+                        `ifdef TEST_2
+                            repeat(4) begin
+                                i_lfsr = o_lfsr[LFSR_WIDTH-1];
+                                #100;
+                                @(posedge clk);
+                            end
+                            i_lfsr = !o_lfsr[LFSR_WIDTH-1];
+                        `endif
+                    `endif
+                    
+                    #100;
+                    @(posedge clk)                                                                  ;
+                end
+                Set_soft_reset(LFSR_SEED)                                                           ;
+                
+            `endif
+            #1000;
+            @(posedge clk);
+        end
                 
         #10000                                                                                  ;
         @(posedge clk)                                                                          ;
@@ -135,30 +171,29 @@ module LFSR16_1002D_tb;
 
     // Instanciacion del generador
     LFSR16_1002D #(
-        .LFSR_WIDTH     (LFSR_WIDTH)                                                            ,
-        .LFSR_SEED      (LFSR_SEED)
+        .LFSR_WIDTH     (LFSR_WIDTH     )                                                       ,
+        .LFSR_SEED      (LFSR_SEED      )
     ) lfsr (
-        .o_lfsr         (o_lfsr)                                                                ,
-        .clk            (clk)                                                                   ,
-        .i_rst          (i_rst)                                                                 ,
-        .i_soft_rst     (i_soft_rst)                                                            ,
-        .i_seed         (i_seed)                                                                ,
-        .i_valid        (i_valid)
+        .o_lfsr         (o_lfsr         )                                                       ,
+        .clk            (clk            )                                                       ,
+        .i_rst          (i_rst          )                                                       ,
+        .i_soft_rst     (i_soft_rst     )                                                       ,
+        .i_seed         (i_seed         )                                                       ,
+        .i_valid        (i_valid        )
     );
 
     // Instanciacion del chequeador
     LFSR16_1002D_checker #(
-        .LFSR_WIDTH     (LFSR_WIDTH)                                                            ,
-        .LFSR_SEED      (LFSR_SEED)
+        .LFSR_WIDTH     (LFSR_WIDTH     )                                                       ,
+        .LFSR_SEED      (LFSR_SEED      )
     ) lfsr_checker (
-        .o_lfsr_checker (o_lfsr_checker)                                                        ,
-        .o_lock         (o_lock)                                                                ,
-        .clk            (clk)                                                                   ,
-        .i_rst          (i_rst)                                                                 ,
-        .i_soft_rst     (i_soft_rst)                                                            ,
-        .i_seed         (i_seed)                                                                ,
-        .i_valid        (i_valid)                                                               ,
-        .i_lfsr         (i_lfsr)
-    );
+        .o_lfsr_checker (o_lfsr_checker )                                                       ,
+        .o_lock         (o_lock         )                                                       ,
+        .clk            (clk            )                                                       ,
+        .i_rst          (i_rst          )                                                       ,
+        .i_soft_rst     (i_soft_rst     )                                                       ,
+        .i_seed         (i_seed         )                                                       ,
+        .i_valid        (i_valid        )                                                       ,
+        .i_lfsr         (i_lfsr         ))                                                      ;
 
 endmodule
