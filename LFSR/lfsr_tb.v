@@ -87,7 +87,7 @@ module LFSR16_1002D_tb;
         //`include "lfsr_tb_checker.v"
 
         // Condiciones frontera del o_lock
-        `ifdef TEST_1
+        `ifdef TEST_6
             always@(*) i_lfsr = o_lfsr[LFSR_WIDTH-1];
         `endif
         
@@ -108,16 +108,30 @@ module LFSR16_1002D_tb;
             i_rst                                       = 1'b0                                      ;
 
             `ifdef TEST_2
-                repeat(10) begin
+                repeat(100) begin
                     i_lfsr = o_lfsr[LFSR_WIDTH-1];
                     test_flag = 1'b1;
-                    #400;
+                    #100;
+                    @(posedge clk);
+                    i_lfsr = o_lfsr[LFSR_WIDTH-1];
+                    test_flag = 1'b1;
+                    #100;
+                    @(posedge clk);
+                    i_lfsr = o_lfsr[LFSR_WIDTH-1];
+                    test_flag = 1'b1;
+                    #100;
+                    @(posedge clk);
+                    i_lfsr = o_lfsr[LFSR_WIDTH-1];
+                    test_flag = 1'b1;
+                    #100;
                     @(posedge clk);
                     i_lfsr = !o_lfsr[LFSR_WIDTH-1];
                     test_flag = 1'b0;
                     #100;
                     @(posedge clk);
                 end
+            `elsif TEST_5
+                    
             `endif
             
             //$display("\n-----o_lock test monitor-----")                                         ;
