@@ -1,7 +1,7 @@
 // Clock: 10 MHz -> 100 ns
 
-`include "lfsr.v"
-`include "lfsr_checker.v"
+//`include "lfsr.v"
+//`include "lfsr_checker.v"
 `timescale 1ns / 100ps
 
 module LFSR16_1002D_tb;
@@ -36,7 +36,7 @@ module LFSR16_1002D_tb;
     // FIXED_SEEDS o RANDOM_SEEDS
     `define                         RANDOM_SEEDS;
     // TEST_1, TEST_2, TEST_3 o TEST_4
-    `define                         TEST_2;
+    `define                         TEST_1;
 
     // Tarea que cambia el valor de i_seed
     task Change_seed
@@ -83,11 +83,12 @@ module LFSR16_1002D_tb;
 
     `ifdef PERIODICITY
         `include "lfsr_tb_periodicity.v"
+
     `elsif CHECKER
         //`include "lfsr_tb_checker.v"
 
         // Condiciones frontera del o_lock
-        `ifdef TEST_6
+        `ifdef TEST_1
             always@(*) i_lfsr = o_lfsr[LFSR_WIDTH-1];
         `endif
         
@@ -109,28 +110,39 @@ module LFSR16_1002D_tb;
 
             `ifdef TEST_2
                 repeat(100) begin
-                    i_lfsr = o_lfsr[LFSR_WIDTH-1];
+                    i_lfsr = o_lfsr;    // Se deben comparar los 16 bits juntos
                     test_flag = 1'b1;
-                    #100;
                     @(posedge clk);
-                    i_lfsr = o_lfsr[LFSR_WIDTH-1];
+                    i_lfsr = o_lfsr;
                     test_flag = 1'b1;
-                    #100;
                     @(posedge clk);
-                    i_lfsr = o_lfsr[LFSR_WIDTH-1];
+                    i_lfsr = o_lfsr;
                     test_flag = 1'b1;
-                    #100;
                     @(posedge clk);
-                    i_lfsr = o_lfsr[LFSR_WIDTH-1];
+                    i_lfsr = o_lfsr;
                     test_flag = 1'b1;
-                    #100;
                     @(posedge clk);
-                    i_lfsr = !o_lfsr[LFSR_WIDTH-1];
+                    i_lfsr = !o_lfsr;
                     test_flag = 1'b0;
-                    #100;
                     @(posedge clk);
                 end
+
             `elsif TEST_5
+                repeat(100) begin
+                    i_lfsr = o_lfsr;
+                    test_flag = 1'b1;
+                    @(posedge clk);
+                end
+                
+                i_lfsr = {~o_lfsr[LFSR_WIDTH-1], o_lfsr[LFSR_WIDTH-2:0]};
+                test_flag = 1'b0;
+                @(posedge clk);
+
+                repeat(10000) begin
+                    i_lfsr = o_lfsr;
+                    test_flag = 1'b1;
+                    @(posedge clk);
+                end
                     
             `endif
             

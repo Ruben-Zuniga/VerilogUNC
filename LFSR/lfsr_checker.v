@@ -114,7 +114,7 @@ module LFSR16_1002D_checker
             state                   <= UNLOCKED                                                 ;
         end
         else if(i_valid) begin
-            o_lfsr_checker[0]       <= i_lfsr                                                   ;
+            o_lfsr_checker[0]       <= feedback                                                 ;
             o_lfsr_checker[1]       <= o_lfsr_checker[0]                                        ;
             o_lfsr_checker[2]       <= o_lfsr_checker[1] ^ feedback                             ;
             o_lfsr_checker[3]       <= o_lfsr_checker[2] ^ feedback                             ;
@@ -136,8 +136,8 @@ module LFSR16_1002D_checker
         end
     end
 
-    assign  feedback                = o_lfsr_checker[15] ^ !o_lfsr_checker                      ;
-    assign  test                    = !(i_lfsr ^ feedback)                                      ;
+    assign  feedback                = o_lfsr_checker[15] ^ ~o_lfsr_checker                      ;
+    assign  test                    = ~(i_lfsr ^ feedback)                                      ;
     assign  o_lock                  = lock                                                      ;
 
 
