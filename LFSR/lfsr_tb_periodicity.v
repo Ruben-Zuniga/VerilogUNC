@@ -7,22 +7,6 @@
             i_valid <= 1'b0                                                                     ;
     end
 
-    // Condiciones frontera del o_lock
-    `ifdef TEST_1
-        always@(*) i_lfsr = o_lfsr[LFSR_WIDTH-1];
-
-    `elsif TEST_2
-        always@(posedge clk) begin
-            if(!i_rst && i_valid) begin
-                repeat(4) begin
-                    i_lfsr = o_lfsr[LFSR_WIDTH-1];
-                end
-                i_lfsr = !o_lfsr[LFSR_WIDTH-1];
-            end
-        end
-    `endif
-    
-
     initial begin
         $dumpfile("Modulos/LFSR/lfsr_tb.vcd");
         $dumpvars(0, LFSR16_1002D_tb);
@@ -38,17 +22,20 @@
         @(posedge clk)                                                                          ;
         i_rst                                       = 1'b0                                      ;
         
-        `ifdef PERIODICITY
-            `include "tb_periodicity.v"
-        `elsif CHECKER
-            $display("\n-----o_lock test monitor-----")                                         ;
+        repeat(4) begin
+            #1000                                                                                   ;
+            `ifdef RANDOM_SEEDS
+                while (o_lfsr != i_seed)
+                    @(posedge clk)                                                                  ;
+                Set_soft_reset($urandom_range(0,LFSR_SEED))                                         ;
             
-            $display("\nTEST 1: all valid")                                                     ;
-            $monitor("time: %0t\to_lock: %0b", $time, o_lock)                                   ;
-
-            `include "tb_periodicity.v"
-            
-        `endif
+            `elsif FIXED_SEED
+                while (o_lfsr != LFSR_SEED)
+                    @(posedge clk)                                                                  ;
+                Set_soft_reset(LFSR_SEED)                                                           ;
+                
+            `endif
+            end
                 
         #10000                                                                                  ;
         @(posedge clk)                                                                          ;
