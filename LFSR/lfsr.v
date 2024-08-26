@@ -1,5 +1,7 @@
 // LFSR Galois top
 
+//`include "lfsr_gen.v"
+//`include "lfsr_checker.v"
 `timescale 1ns / 100ps
 
 module LFSR16_1002D

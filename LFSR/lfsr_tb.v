@@ -1,7 +1,6 @@
 // Clock: 10 MHz -> 100 ns
 
-//`include "lfsr.v"
-//`include "lfsr_checker.v"
+`include "lfsr.v"
 `timescale 1ns / 100ps
 
 module LFSR16_1002D_tb;
@@ -14,22 +13,18 @@ module LFSR16_1002D_tb;
     reg                             clk                                                         ;
 
     // Puertos
-    reg         [2:0]               n_test                                                      ;
     reg                             test_flag                                                   ;
     reg                             i_rst                                                       ;
     reg                             i_soft_rst                                                  ;
     reg                             i_valid                                                     ;
     reg         [LFSR_WIDTH-1:0]    i_seed                                                      ;
-    reg         [LFSR_WIDTH-1:0]    i_lfsr                                                      ;
+    reg                             i_corrupt                                                   ;
     wire        [LFSR_WIDTH-1:0]    o_lfsr                                                      ;
     wire        [LFSR_WIDTH-1:0]    o_lfsr_checker                                              ;
     wire                            o_lock                                                      ;
 
     wire        [1:0]               invalid_cnt                                                 ;
     wire        [2:0]               valid_cnt                                                   ;
-
-    // Iterador
-    integer                         cnt                                                         ;
 
     // PERIODICITY o CHECKER
     `define                         CHECKER;
@@ -78,8 +73,8 @@ module LFSR16_1002D_tb;
     always #50 clk = ~clk                                                                       ;
 
     // Contadores
-    assign valid_cnt    = lfsr_checker.valid_cnt                                                ;
-    assign invalid_cnt  = lfsr_checker.invalid_cnt                                              ;
+    assign valid_cnt    = dut.lfsr_checker.valid_cnt                                                ;
+    assign invalid_cnt  = dut.lfsr_checker.invalid_cnt                                              ;
 
     `ifdef PERIODICITY
         `include "lfsr_tb_periodicity.v"
@@ -96,64 +91,56 @@ module LFSR16_1002D_tb;
             $dumpfile("lfsr_tb.vcd");
             $dumpvars(0, LFSR16_1002D_tb);
 
-            $display("\n-------o_lock test monitor-------")                                         ;
-            $monitor("time: %5t\t\to_lock: %0b", $time, o_lock)                                   ;
+            $display("\n-------o_lock test monitor-------")                                     ;
+            $monitor("time: %5t\t\to_lock: %0b", $time, o_lock)                                 ;
 
-            i_rst                                       = 1'b1                                      ;
-            i_soft_rst                                  = 1'b0                                      ;
-            i_seed                                      = LFSR_SEED                                 ;
-            i_valid                                     = 1'b1                                      ;
-            clk                                         = 1'b0                                      ;
-            i_lfsr                                      = LFSR_SEED                                 ;
+            i_rst                                       = 1'b1                                  ;
+            i_soft_rst                                  = 1'b0                                  ;
+            i_seed                                      = LFSR_SEED                             ;
+            i_valid                                     = 1'b1                                  ;
+            clk                                         = 1'b0                                  ;
+            i_corrupt                                   = 1'b0                                  ;
 
-            #1000                                                                                  ;
-            @(posedge clk);
-            i_rst                                       = 1'b0                                      ;
+            #1000                                                                               ;
+            @(posedge clk)                                                                      ;
+            i_rst                                       = 1'b0                                  ;
 
             `ifdef TEST_1
                 repeat(10000) begin
-                    i_lfsr = o_lfsr;
-                    test_flag = 1'b1;
+                    i_corrupt = 1'b0;
                     @(posedge clk);
                 end
             `elsif TEST_2
                 repeat(2000) begin
                     repeat(4) begin
-                        i_lfsr = o_lfsr;
-                        test_flag = 1'b1;
+                        i_corrupt = 1'b0;
                         @(posedge clk);
                     end
-                    i_lfsr = {~o_lfsr[LFSR_WIDTH-1], o_lfsr[LFSR_WIDTH-2:0]};
-                    test_flag = 1'b0;
+                    i_corrupt = 1'b1;
                     @(posedge clk);
                 end
 
             `elsif TEST_3
                 repeat(5) begin
-                    i_lfsr = o_lfsr;
-                    test_flag = 1'b1;
+                    i_corrupt = 1'b0;
                     @(posedge clk);
                 end
                 repeat(3000) begin
                     repeat(2) begin
-                        i_lfsr = {~o_lfsr[LFSR_WIDTH-1], o_lfsr[LFSR_WIDTH-2:0]};
-                        test_flag = 1'b0;
+                        i_corrupt = 1'b1;
                         @(posedge clk);
                     end
-                    i_lfsr = o_lfsr;
-                    test_flag = 1'b1;
+                    i_corrupt = 1'b0;
                     @(posedge clk);
                 end
             `elsif TEST_4
                 repeat(1200) begin
                     repeat(5) begin
-                        i_lfsr = o_lfsr;
-                        test_flag = 1'b1;
+                        i_corrupt = 1'b0;
                         @(posedge clk);
                     end
                     repeat(3) begin
-                        i_lfsr = {~o_lfsr[LFSR_WIDTH-1], o_lfsr[LFSR_WIDTH-2:0]};
-                        test_flag = 1'b0;
+                        i_corrupt = 1'b1;
                         @(posedge clk);
                     end
                 end
@@ -161,30 +148,18 @@ module LFSR16_1002D_tb;
                     
             `endif
                 
-            $finish                                                                                 ;
+            $finish                                                                             ;
         end
 
 
     `endif
 
-    // Instanciacion del generador
+    // Instanciacion del modulo
     LFSR16_1002D #(
         .LFSR_WIDTH     (LFSR_WIDTH)                                                            ,
         .LFSR_SEED      (LFSR_SEED)
-    ) lfsr (
+    ) dut (
         .o_lfsr         (o_lfsr)                                                                ,
-        .clk            (clk)                                                                   ,
-        .i_rst          (i_rst)                                                                 ,
-        .i_soft_rst     (i_soft_rst)                                                            ,
-        .i_seed         (i_seed)                                                                ,
-        .i_valid        (i_valid)
-    );
-
-    // Instanciacion del chequeador
-    LFSR16_1002D_checker #(
-        .LFSR_WIDTH     (LFSR_WIDTH)                                                            ,
-        .LFSR_SEED      (LFSR_SEED)
-    ) lfsr_checker (
         .o_lfsr_checker (o_lfsr_checker)                                                        ,
         .o_lock         (o_lock)                                                                ,
         .clk            (clk)                                                                   ,
@@ -192,7 +167,7 @@ module LFSR16_1002D_tb;
         .i_soft_rst     (i_soft_rst)                                                            ,
         .i_seed         (i_seed)                                                                ,
         .i_valid        (i_valid)                                                               ,
-        .i_lfsr         (i_lfsr)
+        .i_corrupt      (i_corrupt)
     );
 
 endmodule
