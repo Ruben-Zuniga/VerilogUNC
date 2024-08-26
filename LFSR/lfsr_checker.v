@@ -29,7 +29,7 @@ module LFSR16_1002D_checker
     localparam                      LOCKED              = 2'b11                                 ;
 
     wire                            feedback                                                    ;
-    wire                            test                                                        ;
+    reg                             test                                                        ;
     reg          [1:0]              state                                                       ;
     reg          [1:0]              state_next                                                  ;
     reg          [1:0]              invalid_cnt                                                 ;
@@ -56,7 +56,7 @@ module LFSR16_1002D_checker
                 valid_cnt_next      = valid_cnt + 3'd1                                          ;
                 invalid_cnt_next    = 2'd0                                                      ;
                 if (test)
-                    if(valid_cnt_next == 3'd5)
+                    if(valid_cnt_next == 3'd4)
                         state_next  = LOCKED                                                    ;
                     else
                         state_next  = VALID                                                     ;
@@ -69,7 +69,7 @@ module LFSR16_1002D_checker
                 invalid_cnt_next    = invalid_cnt + 2'd1                                        ;
                 if(test)
                     state_next      = VALID                                                     ;
-                else if(invalid_cnt_next == 2'd3)
+                else if(invalid_cnt_next == 2'd2)
                     state_next      = UNLOCKED                                                  ;
                 else
                     state_next      = INVALID                                                   ;
@@ -98,6 +98,7 @@ module LFSR16_1002D_checker
 
     always @(posedge clk or posedge i_rst) begin
 
+        test                        <= &(~(i_lfsr ^ o_lfsr_checker))                            ;
 
         if(i_rst) begin
             o_lfsr_checker          <= LFSR_SEED                                                ;
@@ -137,7 +138,6 @@ module LFSR16_1002D_checker
     end
 
     assign  feedback                = o_lfsr_checker[15] ^ ~o_lfsr_checker                      ;
-    assign  test                    = &(~(i_lfsr ^ o_lfsr_checker))                             ;
     assign  o_lock                  = lock                                                      ;
 
 

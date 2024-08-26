@@ -38,6 +38,6 @@ module LFSR16_1002D
 
     end
 
-    assign  feedback        = o_lfsr[15] ^ !o_lfsr                                              ;
+    assign  feedback        = o_lfsr[15] ^ ~o_lfsr                                              ;
 
 endmodule

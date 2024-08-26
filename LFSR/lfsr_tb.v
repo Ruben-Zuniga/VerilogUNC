@@ -36,7 +36,7 @@ module LFSR16_1002D_tb;
     // FIXED_SEEDS o RANDOM_SEEDS
     `define                         RANDOM_SEEDS;
     // TEST_1, TEST_2, TEST_3 o TEST_4
-    `define                         TEST_2;
+    `define                         TEST_4;
 
     // Tarea que cambia el valor de i_seed
     task Change_seed
@@ -86,15 +86,18 @@ module LFSR16_1002D_tb;
 
     `elsif CHECKER
         //`include "lfsr_tb_checker.v"
-
-        `ifdef TEST_1
-            always@(*) i_lfsr = o_lfsr[LFSR_WIDTH-1];
-        `endif
         
+        always @(posedge clk) begin
+            if($urandom_range(1,1000) == 'd1)
+                Set_soft_reset($urandom_range(0,LFSR_SEED));
+        end
 
         initial begin
             $dumpfile("lfsr_tb.vcd");
             $dumpvars(0, LFSR16_1002D_tb);
+
+            $display("\n-------o_lock test monitor-------")                                         ;
+            $monitor("time: %5t\t\to_lock: %0b", $time, o_lock)                                   ;
 
             i_rst                                       = 1'b1                                      ;
             i_soft_rst                                  = 1'b0                                      ;
@@ -103,14 +106,18 @@ module LFSR16_1002D_tb;
             clk                                         = 1'b0                                      ;
             i_lfsr                                      = LFSR_SEED                                 ;
 
-            #10000                                                                                  ;
-            @(posedge clk)                                                                          ;
-            i_lfsr = o_lfsr;
+            #1000                                                                                  ;
             @(posedge clk);
             i_rst                                       = 1'b0                                      ;
 
-            `ifdef TEST_2
-                repeat(100) begin
+            `ifdef TEST_1
+                repeat(10000) begin
+                    i_lfsr = o_lfsr;
+                    test_flag = 1'b1;
+                    @(posedge clk);
+                end
+            `elsif TEST_2
+                repeat(2000) begin
                     repeat(4) begin
                         i_lfsr = o_lfsr;
                         test_flag = 1'b1;
@@ -121,34 +128,39 @@ module LFSR16_1002D_tb;
                     @(posedge clk);
                 end
 
-            `elsif TEST_5
-                repeat(100) begin
+            `elsif TEST_3
+                repeat(5) begin
                     i_lfsr = o_lfsr;
                     test_flag = 1'b1;
                     @(posedge clk);
                 end
-                
-                i_lfsr = {~o_lfsr[LFSR_WIDTH-1], o_lfsr[LFSR_WIDTH-2:0]};
-                test_flag = 1'b0;
-                @(posedge clk);
+                repeat(3000) begin
+                    repeat(2) begin
+                        i_lfsr = {~o_lfsr[LFSR_WIDTH-1], o_lfsr[LFSR_WIDTH-2:0]};
+                        test_flag = 1'b0;
+                        @(posedge clk);
+                    end
+                    i_lfsr = o_lfsr;
+                    test_flag = 1'b1;
+                    @(posedge clk);
+                end
+            `elsif TEST_4
+                repeat(1200) begin
+                    repeat(5) begin
+                        i_lfsr = o_lfsr;
+                        test_flag = 1'b1;
+                        @(posedge clk);
+                    end
+                    repeat(3) begin
+                        i_lfsr = {~o_lfsr[LFSR_WIDTH-1], o_lfsr[LFSR_WIDTH-2:0]};
+                        test_flag = 1'b0;
+                        @(posedge clk);
+                    end
+                end
 
-                repeat(10000) begin
-                    i_lfsr = o_lfsr;
-                    test_flag = 1'b1;
-                    @(posedge clk);
-                end
                     
             `endif
                 
-            repeat(1000) begin
-                i_lfsr = o_lfsr;
-                test_flag = 1'b1;
-                @(posedge clk);
-            end
-            
-            //$display("\n-----o_lock test monitor-----")                                         ;
-            //$display("\nTEST 1: all valid")                                                     ;
-            //$monitor("time: %0t\to_lock: %0b", $time, o_lock)                                   ;
             $finish                                                                                 ;
         end
 
