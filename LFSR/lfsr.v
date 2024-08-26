@@ -1,43 +1,59 @@
-// o_lfsr Galois
+// LFSR Galois top
 
 `timescale 1ns / 100ps
 
 module LFSR16_1002D
 #(
-    parameter                       LFSR_SEED   = 65535                                     ,
-    parameter                       LFSR_WIDTH  = 16
+    // Parametros
+    parameter                       LFSR_SEED           = 65535                                 ,
+    parameter                       LFSR_WIDTH          = 16
 )
 (
-    input   wire                    clk                                                     ,
-    input   wire                    i_rst                                                   ,
-    input   wire                    i_soft_rst                                              ,
-    input   wire                    i_valid                                                 ,
-    input   wire [LFSR_WIDTH-1:0]   i_seed                                                  ,
-    output  reg  [LFSR_WIDTH-1:0]   o_lfsr
+    // Entradas
+    input   wire                    clk                                                         ,
+    input   wire                    i_rst                                                       ,
+    input   wire                    i_soft_rst                                                  ,
+    input   wire                    i_valid                                                     ,
+    input   wire [LFSR_WIDTH-1:0]   i_seed                                                      ,
+    input   wire                    i_corrupt                                                   ,
+
+    // Salidas
+    output  wire [LFSR_WIDTH-1:0]   o_lfsr                                                      ,
+    output  wire [LFSR_WIDTH-1:0]   o_lfsr_checker                                              ,
+    output  wire                    o_lock
 );
 
-    wire    feedback;
+    wire         [LFSR_WIDTH-1:0]   lfsr;
 
-    always @(posedge clk or posedge i_rst) begin
+    // Corrupcion del bit 0:
+    assign  lfsr = (i_corrupt)? {~o_lfsr[LFSR_WIDTH-1], o_lfsr[LFSR_WIDTH-2:0]} : o_lfsr;
 
-        if(i_rst)
-            o_lfsr          <= LFSR_SEED                                                        ;
-        else if(i_soft_rst)
-            o_lfsr          <= i_seed                                                           ;
-        else if(i_valid) begin
-            o_lfsr[0]       <= feedback                                                         ;
-            o_lfsr[1]       <= o_lfsr[0]                                                        ;
-            o_lfsr[2]       <= o_lfsr[1] ^ feedback                                             ;
-            o_lfsr[3]       <= o_lfsr[2] ^ feedback                                             ;
-            o_lfsr[4]       <= o_lfsr[3]                                                        ;
-            o_lfsr[5]       <= o_lfsr[4] ^ feedback                                             ;
-            o_lfsr[15:6]    <= o_lfsr[14:5]                                                     ;
-        end
-        else
-            o_lfsr          <= o_lfsr                                                           ;
+    // Instanciacion del generador
+    LFSR16_1002D_gen #(
+        .LFSR_WIDTH     (LFSR_WIDTH)                                                            ,
+        .LFSR_SEED      (LFSR_SEED)
+    ) lfsr_gen (
+        .o_lfsr         (o_lfsr)                                                                ,
+        .clk            (clk)                                                                   ,
+        .i_rst          (i_rst)                                                                 ,
+        .i_soft_rst     (i_soft_rst)                                                            ,
+        .i_seed         (i_seed)                                                                ,
+        .i_valid        (i_valid)
+    );
 
-    end
-
-    assign  feedback        = o_lfsr[15] ^ ~o_lfsr                                              ;
+    // Instanciacion del chequeador
+    LFSR16_1002D_checker #(
+        .LFSR_WIDTH     (LFSR_WIDTH)                                                            ,
+        .LFSR_SEED      (LFSR_SEED)
+    ) lfsr_checker (
+        .o_lfsr_checker (o_lfsr_checker)                                                        ,
+        .o_lock         (o_lock)                                                                ,
+        .clk            (clk)                                                                   ,
+        .i_rst          (i_rst)                                                                 ,
+        .i_soft_rst     (i_soft_rst)                                                            ,
+        .i_seed         (i_seed)                                                                ,
+        .i_valid        (i_valid)                                                               ,
+        .i_lfsr         (lfsr)
+    );
 
 endmodule
