@@ -15,7 +15,7 @@ module LFSR16_1002D_checker
     input   wire                    i_soft_rst                                                  ,
     input   wire                    i_valid                                                     ,
     input   wire [LFSR_WIDTH-1:0]   i_seed                                                      ,
-    input   wire                    i_lfsr                                                      ,
+    input   wire [LFSR_WIDTH-1:0]   i_lfsr                                                      ,
 
     // Salidas
     output  reg  [LFSR_WIDTH-1:0]   o_lfsr_checker                                              ,
@@ -137,7 +137,7 @@ module LFSR16_1002D_checker
     end
 
     assign  feedback                = o_lfsr_checker[15] ^ ~o_lfsr_checker                      ;
-    assign  test                    = ~(i_lfsr ^ feedback)                                      ;
+    assign  test                    = &(~(i_lfsr ^ o_lfsr_checker))                             ;
     assign  o_lock                  = lock                                                      ;
 
 
