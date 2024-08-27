@@ -28,7 +28,7 @@ module LFSR16_1002D
     wire         [LFSR_WIDTH-1:0]   lfsr;
 
     // Corrupcion del bit 0:
-    assign  lfsr = (i_corrupt)? {~o_lfsr[LFSR_WIDTH-1], o_lfsr[LFSR_WIDTH-2:0]} : o_lfsr;
+    assign  lfsr = (i_corrupt)? {~o_lfsr[LFSR_WIDTH-1], o_lfsr[LFSR_WIDTH-2:0]} : o_lfsr        ;
 
     // Instanciacion del generador
     LFSR16_1002D_gen #(
@@ -46,7 +46,7 @@ module LFSR16_1002D
     // Instanciacion del chequeador
     LFSR16_1002D_checker #(
         .LFSR_WIDTH     (LFSR_WIDTH)                                                            ,
-        .LFSR_SEED      (LFSR_SEED)
+        .LFSR_SEED      (16'hFFFE)
     ) lfsr_checker (
         .o_lfsr_checker (o_lfsr_checker)                                                        ,
         .o_lock         (o_lock)                                                                ,

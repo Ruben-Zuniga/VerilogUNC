@@ -28,8 +28,9 @@ module LFSR16_1002D_checker
     localparam                      INVALID             = 2'b10                                 ;
     localparam                      LOCKED              = 2'b11                                 ;
 
-    wire                            feedback                                                    ;
-    reg                             test                                                        ;
+    wire                            feedback_in                                                 ;
+    wire                            feedback_out                                                ;
+    wire                            test                                                        ;
     reg          [1:0]              state                                                       ;
     reg          [1:0]              state_next                                                  ;
     reg          [1:0]              invalid_cnt                                                 ;
@@ -49,7 +50,7 @@ module LFSR16_1002D_checker
                 if (test)
                     state_next      = VALID                                                     ;
                 else
-                    state_next      = INVALID                                                   ;
+                    state_next      = UNLOCKED                                                  ;
             end
             VALID: begin
                 lock_next           = lock                                                      ;
@@ -61,14 +62,14 @@ module LFSR16_1002D_checker
                     else
                         state_next  = VALID                                                     ;
                 else
-                    state_next      = INVALID                                                   ;
+                    state_next      = UNLOCKED                                                  ;
             end
             INVALID: begin
                 lock_next           = lock                                                      ;
                 valid_cnt_next      = 3'd0                                                      ;
                 invalid_cnt_next    = invalid_cnt + 2'd1                                        ;
                 if(test)
-                    state_next      = VALID                                                     ;
+                    state_next      = LOCKED                                                    ;
                 else if(invalid_cnt_next == 2'd2)
                     state_next      = UNLOCKED                                                  ;
                 else
@@ -78,10 +79,10 @@ module LFSR16_1002D_checker
                 lock_next           = 1'b1                                                      ;
                 valid_cnt_next      = 3'd0                                                      ;
                 invalid_cnt_next    = 2'd0                                                      ;
-                if(test)
-                    state_next      = VALID                                                     ;
-                else
+                if(!test)
                     state_next      = INVALID                                                   ;
+                else
+                    state_next      = LOCKED                                                    ;
             end
             default: begin
                 lock_next           = 1'b0                                                      ;
@@ -90,15 +91,13 @@ module LFSR16_1002D_checker
                 if (test)
                     state_next      = VALID                                                     ;
                 else
-                    state_next      = INVALID                                                   ;
+                    state_next      = UNLOCKED                                                  ;
             end
         endcase
     
     end
 
     always @(posedge clk or posedge i_rst) begin
-
-        test                        <= &(~(i_lfsr ^ o_lfsr_checker))                            ;
 
         if(i_rst) begin
             o_lfsr_checker          <= LFSR_SEED                                                ;
@@ -114,13 +113,27 @@ module LFSR16_1002D_checker
             lock                    <= 1'd0                                                     ;
             state                   <= UNLOCKED                                                 ;
         end
+        else if(state == UNLOCKED && !test && i_valid) begin
+            o_lfsr_checker[0]       <= feedback_in                                              ;
+            o_lfsr_checker[1]       <= i_lfsr[0]                                                ;
+            o_lfsr_checker[2]       <= i_lfsr[1] ^ feedback_in                                  ;
+            o_lfsr_checker[3]       <= i_lfsr[2] ^ feedback_in                                  ;
+            o_lfsr_checker[4]       <= i_lfsr[3]                                                ;
+            o_lfsr_checker[5]       <= i_lfsr[4] ^ feedback_in                                  ;
+            o_lfsr_checker[15:6]    <= i_lfsr[14:5]                                             ;
+
+            valid_cnt               <= valid_cnt_next                                           ;
+            invalid_cnt             <= invalid_cnt_next                                         ;
+            lock                    <= lock_next                                                ;
+            state                   <= state_next                                               ;
+        end
         else if(i_valid) begin
-            o_lfsr_checker[0]       <= feedback                                                 ;
+            o_lfsr_checker[0]       <= feedback_out                                             ;
             o_lfsr_checker[1]       <= o_lfsr_checker[0]                                        ;
-            o_lfsr_checker[2]       <= o_lfsr_checker[1] ^ feedback                             ;
-            o_lfsr_checker[3]       <= o_lfsr_checker[2] ^ feedback                             ;
+            o_lfsr_checker[2]       <= o_lfsr_checker[1] ^ feedback_out                         ;
+            o_lfsr_checker[3]       <= o_lfsr_checker[2] ^ feedback_out                         ;
             o_lfsr_checker[4]       <= o_lfsr_checker[3]                                        ;
-            o_lfsr_checker[5]       <= o_lfsr_checker[4] ^ feedback                             ;
+            o_lfsr_checker[5]       <= o_lfsr_checker[4] ^ feedback_out                         ;
             o_lfsr_checker[15:6]    <= o_lfsr_checker[14:5]                                     ;
             
             valid_cnt               <= valid_cnt_next                                           ;
@@ -137,8 +150,10 @@ module LFSR16_1002D_checker
         end
     end
 
-    assign  feedback                = o_lfsr_checker[15] ^ ~o_lfsr_checker                      ;
+    assign  feedback_in             = i_lfsr[15] ^ ~i_lfsr                                      ;
+    assign  feedback_out            = o_lfsr_checker[15] ^ ~o_lfsr_checker                      ;
     assign  o_lock                  = lock                                                      ;
+    assign  test                    = &(~(i_lfsr ^ o_lfsr_checker))                             ;
 
 
 endmodule
