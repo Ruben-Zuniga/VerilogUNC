@@ -31,6 +31,7 @@ module LFSR16_1002D_checker
     wire                            feedback_in                                                 ;
     wire                            feedback_out                                                ;
     wire                            test                                                        ;
+    //reg          [LFSR_WIDTH-1:0]   o_lfsr_checker                                              ;
     reg          [1:0]              state                                                       ;
     reg          [1:0]              state_next                                                  ;
     reg          [1:0]              invalid_cnt                                                 ;

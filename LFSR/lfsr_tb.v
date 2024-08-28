@@ -1,6 +1,6 @@
 // Clock: 10 MHz -> 100 ns
 
-`include "lfsr.v"
+//`include "lfsr.v"
 `timescale 1ns / 100ps
 
 module LFSR16_1002D_tb;

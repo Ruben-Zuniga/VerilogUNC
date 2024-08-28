@@ -1,7 +1,7 @@
 // LFSR Galois top
 
-//`include "lfsr_gen.v"
-//`include "lfsr_checker.v"
+`include "lfsr_gen.v"
+`include "lfsr_checker.v"
 `timescale 1ns / 100ps
 
 module LFSR16_1002D
@@ -12,20 +12,22 @@ module LFSR16_1002D
 )
 (
     // Entradas
-    input   wire                    clk                                                         ,
-    input   wire                    i_rst                                                       ,
-    input   wire                    i_soft_rst                                                  ,
-    input   wire                    i_valid                                                     ,
-    input   wire [LFSR_WIDTH-1:0]   i_seed                                                      ,
-    input   wire                    i_corrupt                                                   ,
-
-    // Salidas
-    output  wire [LFSR_WIDTH-1:0]   o_lfsr                                                      ,
-    output  wire [LFSR_WIDTH-1:0]   o_lfsr_checker                                              ,
-    output  wire                    o_lock
+    input   wire                    clk
 );
 
-    wire         [LFSR_WIDTH-1:0]   lfsr;
+    // Entradas VIO
+    wire                            i_rst                                                       ;
+    wire                            i_soft_rst                                                  ;
+    wire                            i_valid                                                     ;
+    wire         [LFSR_WIDTH-1:0]   i_seed                                                      ;
+    wire                            i_corrupt                                                   ;
+
+    // Salidas VIO
+    wire         [LFSR_WIDTH-1:0]   o_lfsr                                                      ;
+    wire         [LFSR_WIDTH-1:0]   o_lfsr_checker                                              ;
+    wire                            o_lock                                                      ;
+
+    wire         [LFSR_WIDTH-1:0]   lfsr                                                        ;
 
     // Corrupcion del bit 0:
     assign  lfsr = (i_corrupt)? {~o_lfsr[LFSR_WIDTH-1], o_lfsr[LFSR_WIDTH-2:0]} : o_lfsr        ;
@@ -56,6 +58,27 @@ module LFSR16_1002D
         .i_seed         (i_seed)                                                                ,
         .i_valid        (i_valid)                                                               ,
         .i_lfsr         (lfsr)
+    );
+    
+   // Instanciacion del VIO
+    vio
+    u_vio (
+        .clk_0          (clk)                                                                   ,
+        .probe_in0_0    (o_lfsr)                                                                ,
+        .probe_in1_0    (o_lfsr_checker)                                                        ,
+        .probe_in2_0    (o_lock)                                                                ,
+        .probe_out0_0   (i_rst)                                                                 ,
+        .probe_out1_0   (i_soft_rst)                                                            ,
+        .probe_out2_0   (i_valid)                                                               ,
+        .probe_out3_0   (i_seed)                                                                ,
+        .probe_out4_0   (i_corrupt)
+    );
+
+    // Instanciacion del ILA 
+    ila
+    u_ila (
+        .clk_0          (clk)                                                                   ,
+        .probe0_0       (o_lfsr)
     );
 
 endmodule
