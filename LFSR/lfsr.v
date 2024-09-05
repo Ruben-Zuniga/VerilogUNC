@@ -11,7 +11,19 @@ module LFSR16_1002D
     parameter                       LFSR_WIDTH          = 16
 )
 (
+/*
     // Entradas
+    input wire                      i_rst                                                       ,
+    input wire                      i_soft_rst                                                  ,
+    input wire                      i_valid                                                     ,
+    input wire   [LFSR_WIDTH-1:0]   i_seed                                                      ,
+    input wire                      i_corrupt                                                   ,
+
+    // Salidas
+    output wire  [LFSR_WIDTH-1:0]   o_lfsr                                                      ,
+    output wire  [LFSR_WIDTH-1:0]   o_lfsr_checker                                              ,
+    output wire                     o_lock
+*/
     input   wire                    clk
 );
 
@@ -59,7 +71,7 @@ module LFSR16_1002D
         .i_valid        (i_valid)                                                               ,
         .i_lfsr         (lfsr)
     );
-    
+
    // Instanciacion del VIO
     vio
     u_vio (
@@ -78,7 +90,8 @@ module LFSR16_1002D
     ila
     u_ila (
         .clk_0          (clk)                                                                   ,
-        .probe0_0       (o_lfsr)
+        .probe0_0       (o_lfsr)                                                                ,
+        .probe1_0       (o_lock)
     );
 
 endmodule

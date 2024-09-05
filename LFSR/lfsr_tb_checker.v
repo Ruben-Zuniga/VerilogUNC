@@ -1,5 +1,5 @@
 always @(posedge clk) begin
-    if($urandom_range(1,1000) == 'd1)
+    if($urandom_range(1,5000) == 'd1)
         Set_soft_reset($urandom_range(0,LFSR_SEED));
 end
 
@@ -26,6 +26,7 @@ initial begin
             i_corrupt = 1'b0;
             @(posedge clk);
         end
+
     `elsif TEST_2
         repeat(2000) begin
             repeat(4) begin
@@ -49,6 +50,7 @@ initial begin
             i_corrupt = 1'b0;
             @(posedge clk);
         end
+        
     `elsif TEST_4
         repeat(1200) begin
             repeat(5) begin

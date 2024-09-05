@@ -144,10 +144,10 @@ module LFSR16_1002D_checker
         end
         else begin
             o_lfsr_checker          <= o_lfsr_checker                                           ;
-            valid_cnt               <= valid_cnt_next                                           ;
-            invalid_cnt             <= invalid_cnt_next                                         ;
-            lock                    <= lock_next                                                ;
-            state                   <= state_next                                               ;
+            valid_cnt               <= valid_cnt                                                ;
+            invalid_cnt             <= invalid_cnt                                              ;
+            lock                    <= lock                                                     ;
+            state                   <= state                                                    ;
         end
     end
 
